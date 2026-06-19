@@ -1,9 +1,13 @@
 from fastapi import FastAPI
 from app.db.database import engine
+from app.api.products import router as product_router
+from app.models import Product
 
 app = FastAPI(
     title="AI Clothing Store"
 )
+
+app.include_router(product_router)
 
 @app.get("/")
 def home():
