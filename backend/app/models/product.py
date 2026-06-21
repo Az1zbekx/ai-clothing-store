@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Text, Numeric
 from app.db.database import Base
-
+from pgvector.sqlalchemy import Vector
 
 class Product(Base):
     __tablename__ = "products"
@@ -14,3 +14,5 @@ class Product(Base):
     size = Column(String(50))
     price = Column(Numeric(10, 2))
     stock = Column(Integer, default=0)
+
+    embedding = Column(Vector(768))

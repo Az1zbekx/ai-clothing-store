@@ -7,7 +7,7 @@ from app.schemas.product import (
     ProductResponse,
     ProductUpdate
 )
-
+from app.services.embedding_service import create_embedding
 
 
 router = APIRouter(
@@ -22,6 +22,10 @@ def create_product(
     product: ProductCreate,
     db: Session = Depends(get_db)
 ):
+    text = f"{product.name} {product.description}"
+
+    embedding = create_embedding(text)
+
     new_product = Product(
         name=product.name,
         description=product.description,
@@ -30,7 +34,8 @@ def create_product(
         season=product.season,
         size=product.size,
         price=product.price,
-        stock=product.stock
+        stock=product.stock,
+        embedding=embedding
     )
 
     db.add(new_product)
