@@ -6,10 +6,19 @@ from app.api.products import router as product_router
 from app.schemas.chat import ChatRequest, ChatResponse
 from app.services.ai_service import ask_ai
 from app.services.vector_search_service import search_products
+from fastapi.middleware.cors import CORSMiddleware
 
 
 app = FastAPI(
     title="AI Clothing Store"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(product_router)
