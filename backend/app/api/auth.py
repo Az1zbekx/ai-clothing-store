@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.schemas.user import UserLogin
 from app.core.security import verify_password
+from app.core.security import create_access_token
 
 from app.db.database import get_db
 from app.models.user import User
@@ -70,7 +71,16 @@ def login(
             detail="Invalid credentials"
         )
 
-    return {
-        "message": "Login successful",
+    token = create_access_token(
+    {
+        "sub": user.username,
+        "user_id": user.id,
         "role": user.role
+    }
+    )
+
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "role": user.role  
     }

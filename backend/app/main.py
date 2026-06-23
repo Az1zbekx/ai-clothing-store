@@ -1,18 +1,21 @@
 from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
-
 from app.db.database import engine, get_db, Base
 
 from app.models.product import Product
 from app.models.user import User
+from app.models.sale import Sale
 
 from app.api.products import router as product_router
 from app.api.auth import router as auth_router
 
 from app.schemas.chat import ChatRequest, ChatResponse
+
 from app.services.ai_service import ask_ai
 from app.services.vector_search_service import search_products
 from fastapi.middleware.cors import CORSMiddleware
+
+from app.core.security import get_current_user
 
 app = FastAPI(
     title="AI Clothing Store"
@@ -90,3 +93,9 @@ Stock: {p.stock}
     return {
         "response": answer
     }
+
+@app.get("/me")
+def me(
+    current_user=Depends(get_current_user)
+):
+    return current_user

@@ -8,7 +8,9 @@ from app.schemas.product import (
     ProductUpdate
 )
 from app.services.embedding_service import create_embedding
-
+from app.core.security import require_admin
+from app.models.user import User
+from app.services.sale_service import create_sale
 
 router = APIRouter(
     prefix="/products",
@@ -20,7 +22,8 @@ router = APIRouter(
 @router.post("/", response_model=ProductResponse)
 def create_product(
     product: ProductCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user=Depends(require_admin)
 ):
     text = f"{product.name} {product.description}"
 
@@ -72,7 +75,8 @@ def get_product(
 def update_product(
     product_id: int,
     product: ProductUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user=Depends(require_admin)
 ):
     db_product = db.query(Product).filter(
         Product.id == product_id
@@ -100,7 +104,8 @@ def update_product(
 @router.delete("/{product_id}")
 def delete_product(
     product_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user=Depends(require_admin)
 ):
     product = db.query(Product).filter(
         Product.id == product_id
@@ -115,4 +120,78 @@ def delete_product(
     return {
         "message": "Product deleted",
         "id": product_id
+    }
+
+@router.patch("/{product_id}/stock")
+def update_stock(
+    product_id: int,
+    action: str,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_admin)
+):
+    product = db.query(Product).filter(
+        Product.id == product_id
+    ).first()
+
+    if not product:
+        return {"message": "Product not found"}
+
+    if action == "increase":
+        product.stock += 1
+
+    elif action == "decrease":
+        product.stock -= 1
+
+    if product.stock <= 0:
+        db.delete(product)
+        db.commit()
+
+        return {
+            "message": "Product deleted because stock reached 0"
+        }
+
+    db.commit()
+    db.refresh(product)
+
+    return {
+        "id": product.id,
+        "name": product.name,
+        "stock": product.stock
+    }
+
+@router.post("/{product_id}/buy")
+def buy_product(
+    product_id: int,
+    db: Session = Depends(get_db)
+):
+    product = db.query(Product).filter(
+        Product.id == product_id
+    ).first()
+
+    if not product:
+        return {"message": "Product not found"}
+
+    if product.stock <= 0:
+        return {"message": "Out of stock"}
+
+    user = db.query(User).first()
+
+    create_sale(
+        user_id=user.id,
+        product=product,
+        db=db
+    )
+
+    product.stock -= 1
+
+    if product.stock <= 0:
+        db.delete(product)
+    else:
+        db.add(product)
+
+    db.commit()
+
+    return {
+        "message": "Purchase successful",
+        "product": product.name
     }
