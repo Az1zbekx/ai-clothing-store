@@ -1,17 +1,24 @@
 from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
 
-from app.db.database import engine, get_db
+from app.db.database import engine, get_db, Base
+
+from app.models.product import Product
+from app.models.user import User
+
 from app.api.products import router as product_router
+from app.api.auth import router as auth_router
+
 from app.schemas.chat import ChatRequest, ChatResponse
 from app.services.ai_service import ask_ai
 from app.services.vector_search_service import search_products
 from fastapi.middleware.cors import CORSMiddleware
 
-
 app = FastAPI(
     title="AI Clothing Store"
 )
+
+Base.metadata.create_all(bind=engine)
 
 app.add_middleware(
     CORSMiddleware,
@@ -22,7 +29,7 @@ app.add_middleware(
 )
 
 app.include_router(product_router)
-
+app.include_router(auth_router)
 
 @app.get("/")
 def home():
