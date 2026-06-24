@@ -1,4 +1,5 @@
 import re
+import json
 from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
@@ -20,7 +21,8 @@ from app.api.boss import router as boss_router
 from app.schemas.chat import ChatRequest, ChatResponse
 
 from app.services.ai_service import ask_ai
-from app.services.vector_search_service import search_products
+from app.services.ai_chat_service import ask_general_chat
+from app.services.vector_search_service import search_products, extract_filters
 from app.services.chat_history_service import save_chat
 from app.services.chat_history_service import get_last_chat
 from app.services.sale_service import create_sale
@@ -84,17 +86,18 @@ def chat_with_ai(
 
     user_id = current_user["user_id"]
 
+    # Matn orqali xarid so'zlari ("ha"/"xa" olib tashlandi — juda keng ushlab turar edi)
     purchase_words = [
         "olaman",
-        "ha",
         "sotib olaman",
         "olib ber",
         "maqul",
         "olmoqchiman",
-        "xa"
+        "xarid qilaman",
+        "buyurtma beraman"
     ]
 
-    pattern = r'\b(' + '|'.join(purchase_words) + r')\b'
+    pattern = r'\b(' + '|'.join(re.escape(w) for w in purchase_words) + r')\b'
     if re.search(pattern, data.message.lower()):
 
         last_chat = get_last_chat(
@@ -102,14 +105,9 @@ def chat_with_ai(
             db=db
         )
 
-        if not last_chat:
+        if not last_chat or not last_chat.product_id:
             return {
-                "response": "Oldin mahsulot tanlang"
-            }
-
-        if not last_chat.product_id:
-            return {
-                "response": "Mahsulot topilmadi"
+                "response": "❗ Avval qaysi mahsulotni xohlayotganingizni ayting, men topib beraman!"
             }
 
         product = db.query(Product).filter(
@@ -118,7 +116,12 @@ def chat_with_ai(
 
         if not product:
             return {
-                "response": "Mahsulot mavjud emas"
+                "response": "❗ Kechirasiz, bu mahsulot endi mavjud emas. Boshqasini tanlang."
+            }
+
+        if product.stock <= 0:
+            return {
+                "response": f"❗ Afsuski, {product.name} tugab ketgan. Boshqa mahsulot tanlang."
             }
 
         create_sale(
@@ -137,7 +140,30 @@ def chat_with_ai(
         db.commit()
 
         return {
-            "response": f"{product.name} muvaffaqiyatli sotib olindi"
+            "response": f"✅ **{product.name}** muvaffaqiyatli sotib olindi! Yaxshi xarid! 🎉"
+        }
+
+    # Qidiruv yoki oddiy suhbat ekanligini aniqlaymiz
+    filters = extract_filters(data.message)
+    
+    # Kategoriya, rang, mavsum, o'lcham kabi parametrlar bormi? Yoki kiyimga oid kalit so'zlar
+    msg_words = re.findall(r'\b\w+\b', data.message.lower())
+    product_keywords = {"kiyim", "narsa", "bor", "kerak", "qanaqa", "ko'rsat", "top", "ber"}
+    
+    is_product_query = any(filters.values()) or bool(set(msg_words) & product_keywords)
+
+    if not is_product_query:
+        answer = ask_general_chat(data.message)
+        save_chat(
+            user_id=user_id,
+            user_message=data.message,
+            ai_response=answer,
+            product_id=None,
+            db=db
+        )
+        return {
+            "response": answer,
+            "recommended_products": None
         }
 
     products = search_products(
@@ -148,13 +174,15 @@ def chat_with_ai(
     # Top 3 mahsulot AI uchun matn
     products_text = ""
     for p in products[:3]:
-        products_text += f"- {p.name} ({p.category}, {p.color}, {p.size}, ${p.price})\n"
+        products_text += f"- {p.name} ({p.category}, {p.color}, {p.size}, {p.price} so'm)\n"
 
     answer = ask_ai(
         data.message,
         products_text
     )
 
+    # 1-mahsulot IDsi saqlanadi — matn orqali "olaman" deganda shu sotiladi
+    # To'g'ri xarid esa har bir kartaning tugmasi orqali /products/{id}/buy
     save_chat(
         user_id=user_id,
         user_message=data.message,

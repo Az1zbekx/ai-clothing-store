@@ -27,10 +27,52 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (clearBtn) {
         clearBtn.addEventListener('click', () => {
-            chatBox.innerHTML = `<div class="chat-message message-ai">Salom! Sizga qanday yordam bera olaman? Qanday kiyim qidiryapsiz?</div>`;
+            chatBox.innerHTML = `<div class="chat-message message-ai"><div>Salom! Sizga qanday yordam bera olaman? Qanday kiyim qidiryapsiz? 👗</div></div>`;
             localStorage.removeItem(storageKey);
         });
     }
+
+    // ============================================================
+    // EVENT DELEGATION — buy tugmalari localStorage dan tiklanganida
+    // ham ishlashi uchun chatBox ustida bir event listener qo'yamiz
+    // ============================================================
+    chatBox.addEventListener('click', async function(e) {
+        const btn = e.target.closest('.buy-btn');
+        if (!btn) return;
+
+        // Tugma allaqachon ishlatilganmi?
+        if (btn.disabled || btn.classList.contains('bought')) return;
+
+        const productId = btn.getAttribute('data-product-id');
+        const pName = btn.getAttribute('data-product-name');
+
+        if (!productId) {
+            appendAIMessage('❌ Mahsulot ID topilmadi.', null);
+            return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = 'Kutilmoqda...';
+
+        try {
+            const res = await window.api.fetch(`/products/${productId}/buy`, {
+                method: 'POST'
+            });
+
+            btn.textContent = '✓ Sotib olindi!';
+            btn.classList.add('bought');
+            btn.style.background = 'linear-gradient(90deg,#22c55e,#16a34a)';
+            btn.style.cursor = 'default';
+
+            appendAIMessage(`✅ **${pName}** muvaffaqiyatli sotib olindi! Yaxshi xarid! 🎉`, null);
+        } catch (err) {
+            btn.disabled = false;
+            btn.textContent = 'Sotib olaman';
+            appendAIMessage('❌ Xatolik: ' + err.message, null);
+        }
+
+        localStorage.setItem(storageKey, chatBox.innerHTML);
+    });
 
     if (chatForm) {
         chatForm.addEventListener('submit', async (e) => {
@@ -61,7 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             } catch (error) {
                 removeTypingIndicator(typingId);
-                appendAIMessage('Xatolik yuz berdi: ' + error.message, null);
+                appendAIMessage('❌ Xatolik yuz berdi: ' + error.message, null);
             } finally {
                 isAITyping = false;
                 chatInput.disabled = false;
@@ -86,7 +128,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // AI text xabari
         const msgDiv = document.createElement('div');
         msgDiv.className = 'chat-message message-ai';
-        msgDiv.innerHTML = `<div>${text.replace(/\n/g, '<br>')}</div>`;
+        // **bold** formatini qo'llab-quvvatlash
+        const formattedText = text
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\n/g, '<br>');
+        msgDiv.innerHTML = `<div>${formattedText}</div>`;
         wrapper.appendChild(msgDiv);
 
         // Mahsulotlar kartochkasi
@@ -97,41 +143,26 @@ document.addEventListener('DOMContentLoaded', () => {
             products.forEach((p, index) => {
                 const card = document.createElement('div');
                 card.className = 'product-card-chat';
+
+                // data-product-id va data-product-name to'g'ri o'rnatiladi
                 card.innerHTML = `
                     <div class="product-card-header">
                         <span class="product-number">#${index + 1}</span>
-                        <span class="product-category-badge">${p.category || ''}</span>
+                        <span class="product-category-badge">${escapeHtml(p.category || '')}</span>
                     </div>
-                    <h4 class="product-card-name">${p.name || 'Mahsulot'}</h4>
+                    <h4 class="product-card-name">${escapeHtml(p.name || 'Mahsulot')}</h4>
                     <div class="product-card-details">
-                        <div class="detail-row"><span class="detail-label">Mavsum</span><span class="detail-value">${p.season || '-'}</span></div>
-                        <div class="detail-row"><span class="detail-label">Rangi</span><span class="detail-value">${p.color || '-'}</span></div>
-                        <div class="detail-row"><span class="detail-label">O'lchami</span><span class="detail-value">${p.size || '-'}</span></div>
+                        <div class="detail-row"><span class="detail-label">Mavsum</span><span class="detail-value">${escapeHtml(p.season || '-')}</span></div>
+                        <div class="detail-row"><span class="detail-label">Rangi</span><span class="detail-value">${escapeHtml(p.color || '-')}</span></div>
+                        <div class="detail-row"><span class="detail-label">O'lchami</span><span class="detail-value">${escapeHtml(p.size || '-')}</span></div>
                         <div class="detail-row price-row"><span class="detail-label">Narxi</span><span class="detail-value price-value">${Number(p.price).toLocaleString()} so'm</span></div>
                     </div>
-                    <button class="buy-btn" data-product-id="${p.id}" data-product-name="${p.name}">Sotib olaman</button>
+                    <button
+                        class="buy-btn"
+                        data-product-id="${p.id}"
+                        data-product-name="${escapeHtml(p.name || 'Mahsulot')}"
+                    >Sotib olaman</button>
                 `;
-
-                // Sotib olish tugmasi - to'g'ridan-to'g'ri shu mahsulot ID si bilan
-                card.querySelector('.buy-btn').addEventListener('click', async function() {
-                    const btn = this;
-                    const productId = btn.getAttribute('data-product-id');
-                    const pName = btn.getAttribute('data-product-name');
-                    btn.disabled = true;
-                    btn.textContent = 'Kutilmoqda...';
-                    try {
-                        const res = await window.api.fetch(`/products/${productId}/buy`, {
-                            method: 'POST'
-                        });
-                        btn.textContent = '✓ Sotib olindi!';
-                        btn.style.background = 'linear-gradient(90deg,#22c55e,#16a34a)';
-                        appendAIMessage(`✅ ${pName} muvaffaqiyatli sotib olindi! 🎉`, null);
-                    } catch (err) {
-                        btn.disabled = false;
-                        btn.textContent = 'Sotib olaman';
-                        appendAIMessage('❌ Xatolik: ' + err.message, null);
-                    }
-                });
 
                 cardsContainer.appendChild(card);
             });
@@ -141,7 +172,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Hint xabar
             const hint = document.createElement('div');
             hint.className = 'chat-message message-ai';
-            hint.innerHTML = `<div style="font-size:0.82rem;opacity:0.7;">💡 Mahsulotni xohlasangiz tugmani bosing yoki "olaman", "maqul", "sotib olaman" deb yozing.</div>`;
+            hint.innerHTML = `<div style="font-size:0.82rem;opacity:0.7;">💡 Kerakli mahsulot tugmasini bosing!</div>`;
             wrapper.appendChild(hint);
         }
 
@@ -155,7 +186,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const div = document.createElement('div');
         div.id = id;
         div.className = 'chat-message message-ai';
-        div.innerHTML = '<span style="opacity:0.6;">Yozmoqda...</span>';
+        div.innerHTML = `<span style="opacity:0.6;">
+            <span class="typing-dot">●</span>
+            <span class="typing-dot">●</span>
+            <span class="typing-dot">●</span>
+        </span>`;
         chatBox.appendChild(div);
         scrollToBottom();
         return id;
@@ -171,6 +206,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function escapeHtml(text) {
-        return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        if (typeof text !== 'string') return String(text);
+        return text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
     }
 });

@@ -1,55 +1,72 @@
-from ollama import chat
-
-BOSS_SYSTEM_PROMPT = """
-You are an AI business analyst.
-
-Analyze sales data and business statistics.
-
-Give short and useful recommendations.
-
-Always answer in Uzbek.
-
-Do not show reasoning.
-Do not output think tags.
-Only give the final answer.
-"""
-
+import re
 
 def ask_boss_ai(question: str, analytics: str):
+    """
+    Boss savollariga tez, aniq va xatosiz o'zbek tilida javob qaytarish tizimi.
+    Kichik model o'zbek tilida yaxshi gapira olmagani uchun qat'iy shablonlar qo'llaniladi.
+    """
+    q = question.lower()
+    
+    # Intentlarni aniqlaymiz
+    if any(word in q for word in ["eng ko'p", "ko'p sotilgan", "mashhur", "top"]):
+        # Top products
+        match = re.search(r'Top Products:\s*(.*?)\s*Low Stock Products:', analytics, re.DOTALL)
+        if match:
+            top_prods = [line.strip('- \n') for line in match.group(1).strip().split('\n') if line.strip()]
+            if top_prods:
+                return f"Eng ko'p sotilgan mahsulotlar:\n" + "\n".join(f"🏆 {p}" for p in top_prods[:3])
+        return "Hozircha sotuvlar haqida ma'lumot yo'q."
 
-    prompt = f"""
-    Quyidagi biznes ma'lumotlariga asoslanib javob ber.
+    elif any(word in q for word in ["kam qolgan", "tugagan", "tugab qolgan", "qolmagan", "past", "zaxira"]):
+        # Low stock
+        match = re.search(r'Low Stock Products:\s*(.*?)\s*Recent Sales:', analytics, re.DOTALL)
+        if match:
+            low_stock = [line.strip('- \n') for line in match.group(1).strip().split('\n') if line.strip()]
+            if low_stock and low_stock[0] != "No low stock products":
+                return f"Zaxirasi kam qolgan mahsulotlar (zudlik bilan olib kelish kerak):\n" + "\n".join(f"⚠️ {p}" for p in low_stock[:5])
+        return "Barcha mahsulotlar zaxirasi yetarli darajada! ✅"
 
-    {analytics}
+    elif any(word in q for word in ["daromad", "foyda", "summa", "pul", "tushum"]):
+        match = re.search(r'Total Revenue:\s*([\d\.\,\s]+)', analytics)
+        if match:
+            rev = match.group(1).strip()
+            return f"Umumiy daromad: 💰 {rev} so'm.\nSavdolarni oshirish uchun marketingni kuchaytirishni tavsiya qilaman."
+        return "Daromad ma'lumotlari topilmadi."
 
-    Boss savoli:
-    {question}
+    elif any(word in q for word in ["savdo", "sotuv", "nechta"]):
+        match = re.search(r'Total Sales:\s*(\d+)', analytics)
+        if match:
+            sales = match.group(1).strip()
+            return f"Jami {sales} ta mahsulot sotilgan. 📈"
+        return "Hali sotuvlar amalga oshirilmagan."
+        
+    elif any(word in q for word in ["o'rtacha", "chek", "order"]):
+        match = re.search(r'Average Order Value:\s*([\d\.\,\s]+)', analytics)
+        if match:
+            avg = match.group(1).strip()
+            return f"Bitta xaridning o'rtacha qiymati: 🧾 {avg} so'm."
+        return "O'rtacha xarid qiymati topilmadi."
 
-    Faqat javob ber.
-    Promptdagi matnlarni takrorlama.
-"""
+    elif any(word in q for word in ["foydalanuvchi", "mijoz", "odam", "user"]):
+        match = re.search(r'Total Users:\s*(\d+)', analytics)
+        if match:
+            users = match.group(1).strip()
+            return f"Do'konda jami 👥 {users} ta ro'yxatdan o'tgan mijoz bor."
+        return "Mijozlar statistikasi topilmadi."
 
-    response = chat(
-        model="qwen2.5:1.5b",
-        messages=[
-            {
-                "role": "system",
-                "content": BOSS_SYSTEM_PROMPT
-            },
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ],
-        think=False
+    elif any(word in q for word in ["salom", "qalay", "yaxshimi"]):
+        return "Assalomu alaykum, Boss! 📊 Men sizning AI biznes tahlilchingizman. Qanday ma'lumot kerak?"
+
+    # Agar hech qaysi qolipga tushmasa, umumiy xulosa beramiz:
+    rev_match = re.search(r'Total Revenue:\s*([\d\.\,\s]+)', analytics)
+    rev = rev_match.group(1).strip() if rev_match else "0"
+    
+    return (
+        f"📊 Qisqacha hisobot:\n"
+        f"Jami daromad: {rev} so'm.\n"
+        f"Zaxirasi kam qolgan tovarlarni to'ldirishni va reklama byudjetini qayta ko'rib chiqishni tavsiya qilaman. "
+        f"Aniqroq ma'lumot uchun 'eng ko'p sotilgan', 'daromad', 'kam qolgan' deb so'rang."
     )
-
-    msg = response["message"]["content"]
-
-    if "</think>" in msg:
-        msg = msg.split("</think>")[-1].strip()
-
-    return msg
 
 
 from app.services.boss_analytics_service import (
