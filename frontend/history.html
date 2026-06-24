@@ -58,7 +58,7 @@
                 `;
 
                 history.forEach(item => {
-                    const date = new Date(item.date).toLocaleString();
+                    const date = new Date(item.created_at).toLocaleString();
                     html += `
                         <tr>
                             <td>${item.product_name || item.product || 'Unknown'}</td>

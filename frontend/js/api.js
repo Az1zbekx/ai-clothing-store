@@ -48,7 +48,18 @@ async function apiFetch(endpoint, options = {}) {
         }
 
         if (!response.ok) {
-            const errorMsg = data?.detail || data?.message || `Error ${response.status}: ${response.statusText}`;
+            let errorMsg = `Error ${response.status}: ${response.statusText}`;
+            if (data?.detail) {
+                if (Array.isArray(data.detail)) {
+                    errorMsg = data.detail.map(err => `${err.loc.join('.')} - ${err.msg}`).join('\n');
+                } else if (typeof data.detail === 'string') {
+                    errorMsg = data.detail;
+                } else {
+                    errorMsg = JSON.stringify(data.detail);
+                }
+            } else if (data?.message) {
+                errorMsg = data.message;
+            }
             throw new Error(errorMsg);
         }
 

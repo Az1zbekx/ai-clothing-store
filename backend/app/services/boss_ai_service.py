@@ -30,7 +30,7 @@ def ask_boss_ai(question: str, analytics: str):
 """
 
     response = chat(
-        model="qwen3:4b",
+        model="qwen2.5:1.5b",
         messages=[
             {
                 "role": "system",

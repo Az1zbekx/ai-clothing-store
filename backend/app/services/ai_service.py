@@ -1,52 +1,36 @@
 from ollama import chat
 
-SYSTEM_PROMPT = """
-IMPORTANT:
-- Do not show reasoning.
-- Do not output <think> tags.
-- Output only the final answer.
-- If customer writes 'salom', respond in Uzbek.
-
-You are AI Clothing Store virtual sales assistant.
-
-Always answer directly.
-Never show reasoning.
-Never explain your thinking.
-Only output the final answer for the customer.
+SYSTEM_PROMPT = """Sen "AI Clothing Store" do'konining savdo yordamchisisisan.
+Faqat O'zbek tilida gapir.
+Qisqa va do'stona javob ber — 1-2 jumla.
+Mahsulotlar ro'yxatini o'zing sanama, ular UI da ko'rsatiladi.
+Faqat "Mana siz uchun topganlarim:" yoki "Albatta, quyidagilarni ko'rib chiqing:" kabi qisqa kirish gapini yoz.
 """
 
 
 def ask_ai(message: str, products_text: str):
+    if products_text.strip():
+        user_prompt = f"""Mijoz: {message}
 
-    user_prompt = f"""
-AVAILABLE PRODUCTS:
-
+Biz unga quyidagi mahsulotlarni topib berdik:
 {products_text}
 
-CUSTOMER MESSAGE:
+Mijozga do'stona va qisqa (1-2 jumla) kirish gapi yoz. Mahsulot nomlarini takrorlama, ular alohida ko'rsatiladi."""
+    else:
+        user_prompt = f"""Mijoz: {message}
 
-{message}
-"""
+Afsuski, bu turdagi mahsulot hozir do'konda yo'q. Buning haqida do'stona va qisqa xabar ber."""
 
     response = chat(
-        model="qwen3:4b",
+        model="qwen2.5:1.5b",
         messages=[
-            {
-                "role": "system",
-                "content": SYSTEM_PROMPT
-            },
-            {
-                "role": "user",
-                "content": user_prompt
-            }
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": user_prompt}
         ],
         think=False
     )
 
-    print(response)
-
     msg = response["message"]["content"]
-
     if "</think>" in msg:
         msg = msg.split("</think>")[-1].strip()
 

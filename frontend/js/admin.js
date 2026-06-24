@@ -98,7 +98,9 @@ document.addEventListener('DOMContentLoaded', () => {
             modalTitle.innerText = 'Edit Product';
             document.getElementById('product-id').value = product.id;
             document.getElementById('product-name').value = product.name;
+            document.getElementById('product-description').value = product.description || '';
             document.getElementById('product-category').value = product.category;
+            document.getElementById('product-season').value = product.season || '';
             document.getElementById('product-color').value = product.color;
             document.getElementById('product-size').value = product.size;
             document.getElementById('product-price').value = product.price;
@@ -136,7 +138,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const id = document.getElementById('product-id').value;
         const payload = {
             name: document.getElementById('product-name').value,
+            description: document.getElementById('product-description').value,
             category: document.getElementById('product-category').value,
+            season: document.getElementById('product-season').value,
             color: document.getElementById('product-color').value,
             size: document.getElementById('product-size').value,
             price: parseFloat(document.getElementById('product-price').value),

@@ -1,3 +1,4 @@
+import re
 from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
@@ -87,10 +88,14 @@ def chat_with_ai(
         "olaman",
         "ha",
         "sotib olaman",
-        "olib ber"
+        "olib ber",
+        "maqul",
+        "olmoqchiman",
+        "xa"
     ]
 
-    if data.message.lower() in purchase_words:
+    pattern = r'\b(' + '|'.join(purchase_words) + r')\b'
+    if re.search(pattern, data.message.lower()):
 
         last_chat = get_last_chat(
             user_id=user_id,
@@ -140,20 +145,10 @@ def chat_with_ai(
         db
     )
 
+    # Top 3 mahsulot AI uchun matn
     products_text = ""
-
-    for p in products:
-        products_text += f"""
-Name: {p.name}
-Description: {p.description}
-Category: {p.category}
-Color: {p.color}
-Season: {p.season}
-Size: {p.size}
-Price: {p.price}
-Stock: {p.stock}
-
-"""
+    for p in products[:3]:
+        products_text += f"- {p.name} ({p.category}, {p.color}, {p.size}, ${p.price})\n"
 
     answer = ask_ai(
         data.message,
@@ -168,8 +163,22 @@ Stock: {p.stock}
         db=db
     )
 
+    recommended = [
+        {
+            "id": p.id,
+            "name": p.name,
+            "category": p.category,
+            "season": p.season,
+            "color": p.color,
+            "size": p.size,
+            "price": float(p.price)
+        }
+        for p in products[:3]
+    ]
+
     return {
-        "response": answer
+        "response": answer,
+        "recommended_products": recommended if recommended else None
     }
 
 @app.get("/me")

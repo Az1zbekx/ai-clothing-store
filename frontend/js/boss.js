@@ -11,10 +11,35 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Boss AI Chat Logic ---
+    let isAITyping = false;
+    window.addEventListener('beforeunload', (e) => {
+        if (isAITyping) {
+            e.preventDefault();
+            e.returnValue = "Iltimos, AI javob berishini kuting! Sahifadan chiqsangiz javob yo'qoladi.";
+        }
+    });
     const chatForm = document.getElementById('boss-chat-form');
     const chatInput = document.getElementById('boss-chat-input');
     const chatBox = document.getElementById('boss-chat-box');
     const sendBtn = document.getElementById('boss-send-btn');
+    const clearBtn = document.getElementById('boss-clear-chat-btn');
+
+    const storageKey = `boss_chat_history_${user.username}`;
+    const savedChat = localStorage.getItem(storageKey);
+    if (savedChat && chatBox) {
+        chatBox.innerHTML = savedChat;
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    if (clearBtn && chatBox) {
+        clearBtn.addEventListener('click', () => {
+            chatBox.innerHTML = `
+            <div class="chat-message message-ai">
+                Assalomu alaykum, Boss! Biznesingiz haqida qanday ma'lumot kerak?
+            </div>`;
+            localStorage.removeItem(storageKey);
+        });
+    }
 
     if (chatForm) {
         chatForm.addEventListener('submit', async (e) => {
@@ -28,6 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
             sendBtn.disabled = true;
 
             const typingId = appendTypingIndicator();
+            isAITyping = true;
 
             try {
                 const response = await window.api.fetch('/boss/ai', {
@@ -44,6 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 removeTypingIndicator(typingId);
                 appendMessage('Xatolik yuz berdi: ' + error.message, 'ai');
             } finally {
+                isAITyping = false;
                 chatInput.disabled = false;
                 sendBtn.disabled = false;
                 chatInput.focus();
@@ -57,6 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
         msgDiv.innerHTML = `<div>${text.replace(/\\n/g, '<br>')}</div>`;
         chatBox.appendChild(msgDiv);
         chatBox.scrollTop = chatBox.scrollHeight;
+        localStorage.setItem(storageKey, chatBox.innerHTML);
     }
 
     function appendTypingIndicator() {
@@ -121,8 +149,8 @@ window.boss = {
 
             // Format Low Stock
             let lowStockHtml = '<ul>';
-            if (data.low_stock_products && data.low_stock_products.length > 0) {
-                data.low_stock_products.forEach(p => {
+            if (data.low_stock && data.low_stock.length > 0) {
+                data.low_stock.forEach(p => {
                     lowStockHtml += `<li style="color: var(--danger)">${p.name || p} (Stock: ${p.stock || p.quantity || 'Low'})</li>`;
                 });
             } else {

@@ -21,7 +21,7 @@ def search_products(query: str, db: Session):
             stock
         FROM products
         ORDER BY embedding <=> CAST(:embedding AS vector)
-        LIMIT 3
+        LIMIT 6
     """)
 
     result = db.execute(

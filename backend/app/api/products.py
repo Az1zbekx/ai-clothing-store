@@ -8,7 +8,7 @@ from app.schemas.product import (
     ProductUpdate
 )
 from app.services.embedding_service import create_embedding
-from app.core.security import require_admin
+from app.core.security import require_admin, get_current_user
 from app.models.user import User
 from app.services.sale_service import create_sale
 
@@ -162,7 +162,8 @@ def update_stock(
 @router.post("/{product_id}/buy")
 def buy_product(
     product_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
 ):
     product = db.query(Product).filter(
         Product.id == product_id
@@ -174,10 +175,8 @@ def buy_product(
     if product.stock <= 0:
         return {"message": "Out of stock"}
 
-    user = db.query(User).first()
-
     create_sale(
-        user_id=user.id,
+        user_id=current_user["user_id"],
         product=product,
         db=db
     )
