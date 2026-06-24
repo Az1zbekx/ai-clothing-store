@@ -96,3 +96,13 @@ The AI Assistant uses a **Hybrid Fallback Logic** to ensure 100% correct Uzbek l
 
 ## 📄 License
 This project is open-source and available under the [MIT License](LICENSE).
+
+## 🔑 Login Credentials
+
+**admin va boss loginlari**
+
+**admin**
+1234
+
+**boss**
+1234
