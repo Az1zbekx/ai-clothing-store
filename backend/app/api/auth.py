@@ -1,16 +1,21 @@
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-
-from app.schemas.user import UserLogin
-from app.core.security import verify_password
-from app.core.security import create_access_token
 
 from app.db.database import get_db
 from app.models.user import User
 from app.schemas.user import UserRegister
-from app.core.security import hash_password
 
-router = APIRouter(prefix="/auth", tags=["Auth"])
+from app.core.security import (
+    hash_password,
+    verify_password,
+    create_access_token
+)
+
+router = APIRouter(
+    prefix="/auth",
+    tags=["Auth"]
+)
 
 
 @router.post("/register")
@@ -18,7 +23,6 @@ def register(
     data: UserRegister,
     db: Session = Depends(get_db)
 ):
-
     existing = (
         db.query(User)
         .filter(User.username == data.username)
@@ -44,15 +48,15 @@ def register(
         "message": "User created"
     }
 
+
 @router.post("/login")
 def login(
-    data: UserLogin,
+    form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):
-
     user = (
         db.query(User)
-        .filter(User.username == data.username)
+        .filter(User.username == form_data.username)
         .first()
     )
 
@@ -63,7 +67,7 @@ def login(
         )
 
     if not verify_password(
-        data.password,
+        form_data.password,
         user.password_hash
     ):
         raise HTTPException(
@@ -71,16 +75,16 @@ def login(
             detail="Invalid credentials"
         )
 
-    token = create_access_token(
-    {
-        "sub": user.username,
-        "user_id": user.id,
-        "role": user.role
-    }
+    access_token = create_access_token(
+        {
+            "sub": user.username,
+            "user_id": user.id,
+            "role": user.role
+        }
     )
 
     return {
-        "access_token": token,
+        "access_token": access_token,
         "token_type": "bearer",
-        "role": user.role  
+        "role": user.role
     }

@@ -22,6 +22,7 @@ from app.services.chat_history_service import get_last_chat
 from app.services.sale_service import create_sale
 
 from fastapi.middleware.cors import CORSMiddleware
+from app.api.boss import router as boss_router
 
 from app.core.security import get_current_user
 from app.services.sale_service import create_sale
@@ -44,6 +45,8 @@ app.add_middleware(
 
 app.include_router(product_router)
 app.include_router(auth_router)
+app.include_router(boss_router)
+
 
 @app.get("/")
 def home():

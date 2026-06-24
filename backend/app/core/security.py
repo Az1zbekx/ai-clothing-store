@@ -71,3 +71,14 @@ def require_admin(
         )
 
     return current_user
+
+def require_boss(
+    current_user=Depends(get_current_user)
+):
+    if current_user["role"] != "boss":
+        raise HTTPException(
+            status_code=403,
+            detail="Boss access required"
+        )
+
+    return current_user
