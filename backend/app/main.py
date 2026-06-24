@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.db.database import engine, get_db, Base
 
@@ -12,6 +13,8 @@ from app.models.product import Product
 
 from app.api.products import router as product_router
 from app.api.auth import router as auth_router
+from app.api.sales import router as sales_router
+from app.api.boss import router as boss_router
 
 from app.schemas.chat import ChatRequest, ChatResponse
 
@@ -21,11 +24,8 @@ from app.services.chat_history_service import save_chat
 from app.services.chat_history_service import get_last_chat
 from app.services.sale_service import create_sale
 
-from fastapi.middleware.cors import CORSMiddleware
-from app.api.boss import router as boss_router
-
 from app.core.security import get_current_user
-from app.services.sale_service import create_sale
+
 
 
 
@@ -46,6 +46,7 @@ app.add_middleware(
 app.include_router(product_router)
 app.include_router(auth_router)
 app.include_router(boss_router)
+app.include_router(sales_router)
 
 
 @app.get("/")
@@ -76,8 +77,11 @@ def db_test():
 @app.post("/chat", response_model=ChatResponse)
 def chat_with_ai(
     data: ChatRequest,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
 ):
+
+    user_id = current_user["user_id"]
 
     purchase_words = [
         "olaman",
@@ -89,7 +93,7 @@ def chat_with_ai(
     if data.message.lower() in purchase_words:
 
         last_chat = get_last_chat(
-            user_id=1,
+            user_id=user_id,
             db=db
         )
 
@@ -113,7 +117,7 @@ def chat_with_ai(
             }
 
         create_sale(
-            user_id=1,
+            user_id=user_id,
             product=product,
             db=db
         )
@@ -157,7 +161,7 @@ Stock: {p.stock}
     )
 
     save_chat(
-        user_id=1,
+        user_id=user_id,
         user_message=data.message,
         ai_response=answer,
         product_id=products[0].id if products else None,
