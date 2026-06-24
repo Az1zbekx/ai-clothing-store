@@ -3,7 +3,7 @@ from sqlalchemy import func
 
 from app.models.sale import Sale
 from app.models.product import Product
-
+from app.models.user import User
 
 def get_total_revenue(db: Session):
 
@@ -64,3 +64,29 @@ def get_recent_sales(db: Session):
     )
 
     return sales
+
+def get_total_users(db: Session):
+
+    return db.query(User).count()
+
+
+def get_total_products(db: Session):
+
+    return db.query(Product).count()
+
+
+def get_average_order_value(db: Session):
+
+    total_sales = db.query(Sale).count()
+
+    if total_sales == 0:
+        return 0
+
+    total_revenue = (
+        db.query(
+            func.sum(Sale.total_price)
+        ).scalar()
+        or 0
+    )
+
+    return float(total_revenue) / total_sales
