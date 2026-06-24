@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Chat - AI Clothing Store</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">AI Clothing Store</div>
+        <div class="nav-links">
+            <a href="customer.html" style="color: var(--primary);">Chat</a>
+            <a href="history.html">Purchase History</a>
+            <button id="logout-btn" class="btn btn-danger" style="padding: 0.5rem 1rem;">Logout</button>
+        </div>
+    </nav>
+
+    <div class="chat-container">
+        <div class="chat-box" id="chat-box">
+            <div class="chat-message message-ai">
+                Salom! Sizga qanday yordam bera olaman? Qanday kiyim qidiryapsiz?
+            </div>
+        </div>
+        <form class="chat-input-container" id="chat-form">
+            <input type="text" id="chat-input" class="form-control" placeholder="Xabaringizni yozing..." required autocomplete="off">
+            <button type="submit" class="btn btn-primary" id="send-btn">Yuborish</button>
+        </form>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/chat.js"></script>
+</body>
+</html>

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boss Analytics - AI Clothing Store</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">Boss Panel</div>
+        <div class="nav-links">
+            <a href="boss-dashboard.html">Dashboard</a>
+            <a href="boss-analytics.html" style="color: var(--primary);">Analytics</a>
+            <a href="boss-ai.html">AI Assistant</a>
+            <button id="logout-btn" class="btn btn-danger" style="padding: 0.5rem 1rem;">Logout</button>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h2>In-Depth Analytics</h2>
+        <div id="analytics-error"></div>
+        <div id="analytics-content">
+            <div class="loader-container"><div class="loader"></div></div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/boss.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.boss) window.boss.loadAnalytics();
+        });
+    </script>
+</body>
+</html>

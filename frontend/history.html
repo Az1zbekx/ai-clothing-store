@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Purchase History - AI Clothing Store</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">AI Clothing Store</div>
+        <div class="nav-links">
+            <a href="customer.html">Chat</a>
+            <a href="history.html" style="color: var(--primary);">Purchase History</a>
+            <button id="logout-btn" class="btn btn-danger" style="padding: 0.5rem 1rem;">Logout</button>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h2>Your Purchase History</h2>
+        <div id="history-error"></div>
+        <div id="history-container" class="table-container mt-4">
+            <!-- Loading or table will be injected here -->
+            <div class="loader-container"><div class="loader"></div></div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Ensure authenticated
+            const user = window.auth.checkAuth();
+            if (!user) return;
+
+            const container = document.getElementById('history-container');
+            
+            try {
+                const history = await window.api.fetch('/sales/my-history', { method: 'GET' });
+                
+                if (!history || history.length === 0) {
+                    container.innerHTML = '<p style="padding: 2rem; text-align: center; color: var(--text-muted);">You have no purchase history yet.</p>';
+                    return;
+                }
+
+                let html = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Quantity</th>
+                                <th>Total Price</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                history.forEach(item => {
+                    const date = new Date(item.date).toLocaleString();
+                    html += `
+                        <tr>
+                            <td>${item.product_name || item.product || 'Unknown'}</td>
+                            <td>${item.quantity}</td>
+                            <td style="color: #34d399; font-weight: 500;">$${item.total_price}</td>
+                            <td>${date}</td>
+                        </tr>
+                    `;
+                });
+
+                html += '</tbody></table>';
+                container.innerHTML = html;
+
+            } catch (error) {
+                container.innerHTML = '';
+                window.api.showError('history-error', 'Failed to load purchase history: ' + error.message);
+            }
+        });
+    </script>
+</body>
+</html>

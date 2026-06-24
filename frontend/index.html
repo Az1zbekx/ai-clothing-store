@@ -3,48 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Clothing Store</title>
-
+    <title>AI Clothing Store - Redirecting</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-
-    <div class="container">
-
-        <header>
-            <h1>AI Clothing Store</h1>
-            <p>AI Powered Fashion Assistant</p>
-        </header>
-
-        <div class="chat-container">
-
-            <div id="chat-box" class="chat-box">
-
-                <div class="ai-message">
-                    👋 Salom! Qanday kiyim qidiryapsiz?
-                </div>
-
+    <div class="auth-container">
+        <div class="card text-center" style="width: 100%; max-width: 400px; text-align: center;">
+            <h2>AI Clothing Store</h2>
+            <div id="loading" class="loader-container">
+                <div class="loader"></div>
             </div>
-
-            <div class="input-area">
-
-                <input
-                    type="text"
-                    id="message-input"
-                    placeholder="Menga oq futbolka kerak..."
-                >
-
-                <button id="send-btn">
-                    Send
-                </button>
-
-            </div>
-
+            <p class="mt-4" style="color: var(--text-muted)">Redirecting...</p>
         </div>
-
     </div>
-
-    <script src="js/app.js"></script>
-
+    <script>
+        // Simple script to check auth status and redirect
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            try {
+                const userStr = localStorage.getItem('user');
+                if (userStr) {
+                    const user = JSON.parse(userStr);
+                    switch (user.role) {
+                        case 'boss':
+                            window.location.href = 'boss-dashboard.html';
+                            break;
+                        case 'admin':
+                            window.location.href = 'admin.html';
+                            break;
+                        case 'user':
+                        default:
+                            window.location.href = 'customer.html';
+                            break;
+                    }
+                } else {
+                    // Token exists but no user info, send to login to re-auth
+                    localStorage.removeItem('token');
+                    window.location.href = 'login.html';
+                }
+            } catch (e) {
+                localStorage.removeItem('token');
+                window.location.href = 'login.html';
+            }
+        });
+    </script>
 </body>
 </html>

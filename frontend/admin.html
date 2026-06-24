@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - AI Clothing Store</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: var(--bg-card);
+            padding: 2rem;
+            border-radius: var(--radius);
+            width: 100%;
+            max-width: 500px;
+            border: 1px solid var(--border-color);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">Admin Panel</div>
+        <div class="nav-links">
+            <a href="admin.html" style="color: var(--primary);">Products</a>
+            <button id="logout-btn" class="btn btn-danger" style="padding: 0.5rem 1rem;">Logout</button>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="flex-between mb-4">
+            <h2>Product Management</h2>
+            <button id="add-product-btn" class="btn btn-primary" style="width: auto;">+ Add Product</button>
+        </div>
+
+        <div id="admin-error"></div>
+        <div id="products-table-container" class="table-container">
+            <div class="loader-container"><div class="loader"></div></div>
+        </div>
+    </div>
+
+    <!-- Product Modal -->
+    <div id="product-modal" class="modal">
+        <div class="modal-content">
+            <h3 id="modal-title" class="mb-4">Add Product</h3>
+            <form id="product-form">
+                <input type="hidden" id="product-id">
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" id="product-name" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Category</label>
+                    <input type="text" id="product-category" class="form-control" required>
+                </div>
+                <div class="form-group flex-between" style="gap: 1rem;">
+                    <div style="flex: 1;">
+                        <label>Color</label>
+                        <input type="text" id="product-color" class="form-control" required>
+                    </div>
+                    <div style="flex: 1;">
+                        <label>Size</label>
+                        <input type="text" id="product-size" class="form-control" required>
+                    </div>
+                </div>
+                <div class="form-group flex-between" style="gap: 1rem;">
+                    <div style="flex: 1;">
+                        <label>Price</label>
+                        <input type="number" step="0.01" id="product-price" class="form-control" required>
+                    </div>
+                    <div style="flex: 1;">
+                        <label>Stock</label>
+                        <input type="number" id="product-stock" class="form-control" required>
+                    </div>
+                </div>
+                <div class="flex-between mt-4">
+                    <button type="button" id="cancel-btn" class="btn" style="background: transparent; border: 1px solid var(--border-color); width: 48%;">Cancel</button>
+                    <button type="submit" class="btn btn-primary" style="width: 48%;">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+</html>
