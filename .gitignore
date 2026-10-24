@@ -1,6 +1,24 @@
+# Environments & Virtualenv
 venv/
-__pycache__/
+env/
 .env
+.venv
+
+# Python Bytecode & Cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE & Editor Configs
 .idea/
 .vscode/
-*.pyc
+*.swp
+*.swo
+
+# OS specific
+.DS_Store
+Thumbs.db
